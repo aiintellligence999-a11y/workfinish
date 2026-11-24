@@ -1,217 +1,122 @@
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="hi">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WORKFINISH | Student Registration</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<style>
-*{box-sizing:border-box}
-body{
- margin:0;min-height:100vh;display:grid;place-items:center;
- padding:20px;font-family:Arial,sans-serif;
- background:#0b1020;color:white
-}
-.card{
- width:100%;max-width:430px;padding:28px;
- background:#151d33;border:1px solid #293653;
- border-radius:20px;box-shadow:0 15px 45px #0005
-}
-h1{color:#65d6a5;margin-bottom:5px}
-p{color:#aebbd1;line-height:1.5}
-label{display:block;margin:17px 0 7px}
-input{
- width:100%;padding:14px;border-radius:10px;
- background:#0b1020;color:white;
- border:1px solid #43516d;font-size:15px
-}
-button{
- width:100%;padding:14px;margin-top:20px;
- border:0;border-radius:10px;background:#65d6a5;
- font-weight:bold;font-size:16px;cursor:pointer
-}
-.switch{
- background:transparent;color:#65d6a5;
- border:1px solid #43516d
-}
-#message{margin-top:16px;line-height:1.5}
-.hidden{display:none}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WORKFINISH - Student Registration</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial;background:#101827;color:white;display:grid;place-items:center;min-height:100vh;padding:20px}
+    .card{width:100%;max-width:400px;background:#1d293b;padding:28px;border-radius:18px}
+    h1{text-align:center;color:#60a5fa}
+    p{text-align:center;color:#bdc8d8}
+    input,button{width:100%;padding:14px;margin:9px 0;border-radius:9px;border:0;font-size:15px}
+    input{background:#f1f5f9;color:#111}
+    button{background:#2563eb;color:white;font-weight:bold;cursor:pointer}
+    button.secondary{background:#475569}
+    #msg{font-size:14px;overflow-wrap:anywhere}
+  </style>
 </head>
 <body>
+  <div class="card">
+    <h1>WORKFINISH</h1>
+    <p>Student Account</p>
 
-<div class="card">
- <h1>WORKFINISH</h1>
- <h2 id="heading">Create Student Account</h2>
- <p id="subheading">Register to book your work easily.</p>
+    <input id="name" placeholder="पूरा नाम">
+    <input id="mobile" placeholder="मोबाइल नंबर" type="tel">
+    <input id="email" placeholder="ईमेल">
+    <input id="password" placeholder="पासवर्ड" type="password">
 
- <form id="registerForm">
-  <div id="nameBox">
-   <label>Full Name</label>
-   <input id="name" type="text" maxlength="100"
-    placeholder="Enter your full name" required>
+    <button onclick="register()">Register</button>
+    <button class="secondary" onclick="login()">Login</button>
+    <p id="msg"></p>
   </div>
 
-  <label>Mobile Number</label>
-  <input id="mobile" type="tel" inputmode="numeric"
-   maxlength="10" placeholder="10-digit mobile number"
-   pattern="[0-9]{10}" required>
+  <script>
+    const SUPABASE_URL = "https://bsbrggofoikseyztqcgy.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_RsqurUsRe4m9aJpOa-m5aQ_TpyycQs_";
 
-  <label>Password</label>
-  <input id="password" type="password"
-   minlength="8" placeholder="Minimum 8 characters" required>
+    const db = window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_KEY
+    );
 
-  <button id="mainButton" type="submit">REGISTER NOW</button>
- </form>
-
- <form id="otpForm" class="hidden">
-  <label>Enter OTP sent to your mobile</label>
-  <input id="otp" inputmode="numeric"
-   maxlength="6" placeholder="Enter OTP" required>
-  <button type="submit">VERIFY OTP</button>
- </form>
-
- <button class="switch" id="switchButton" type="button">
-  Already registered? Login
- </button>
-
- <div id="message" role="status"></div>
-</div>
-
-<script>
-const SUPABASE_URL =
- "https://bsbrggofoikseyztqcgy.supabase.co";
-
-const SUPABASE_PUBLISHABLE_KEY =
- "sb_publishable_RsqurUsRe4m9aJpOa-m5aQ_TpyycQs_";
-
-const db = window.supabase.createClient(
- SUPABASE_URL,
- SUPABASE_PUBLISHABLE_KEY
-);
-
-const registerForm = document.getElementById("registerForm");
-const otpForm = document.getElementById("otpForm");
-const message = document.getElementById("message");
-const switchButton = document.getElementById("switchButton");
-
-let isLogin = false;
-let pendingPhone = "";
-
-function showMessage(text, success=false){
- message.textContent = text;
- message.style.color = success ? "#65d6a5" : "#ff9999";
-}
-
-switchButton.addEventListener("click",()=>{
- isLogin = !isLogin;
- document.getElementById("heading").textContent =
-  isLogin ? "Student Login" : "Create Student Account";
- document.getElementById("subheading").textContent =
-  isLogin ? "Login to your account." : "Register to book your work easily.";
- document.getElementById("nameBox").classList.toggle("hidden",isLogin);
- document.getElementById("mainButton").textContent =
-  isLogin ? "LOGIN" : "REGISTER NOW";
- switchButton.textContent =
-  isLogin ? "New student? Register" : "Already registered? Login";
- showMessage("");
-});
-
-registerForm.addEventListener("submit",async(e)=>{
- e.preventDefault();
- showMessage("");
-
- const mobile = document.getElementById("mobile").value.trim();
- const password = document.getElementById("password").value;
- const name = document.getElementById("name").value.trim();
-
- if(!/^[0-9]{10}$/.test(mobile)){
-  showMessage("Enter a valid 10-digit mobile number.");
-  return;
- }
-
- const phone = "+91" + mobile;
- const button = document.getElementById("mainButton");
- button.disabled = true;
-
- try{
-  if(isLogin){
-   const {data,error} = await db.auth.signInWithPassword({
-    phone,
-    password
-   });
-   if(error) throw error;
-
-   showMessage("Login successful! Welcome to WORKFINISH.",true);
-   setTimeout(()=>{
-    window.location.href="./index.html";
-   },1000);
-
-  }else{
-   if(name.length < 2){
-    showMessage("Please enter your full name.");
-    return;
-   }
-
-   const {data,error} = await db.auth.signUp({
-    phone,
-    password,
-    options:{
-     data:{full_name:name}
+    function message(text) {
+      document.getElementById("msg").textContent = text;
     }
-   });
 
-   if(error) throw error;
+    async function register() {
+      const name = document.getElementById("name").value.trim();
+      const mobile = document.getElementById("mobile").value.trim();
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
 
-   pendingPhone = phone;
-   registerForm.classList.add("hidden");
-   otpForm.classList.remove("hidden");
-   switchButton.classList.add("hidden");
+      if (!name || !mobile || !email || !password) {
+        message("सभी जानकारी भरें।");
+        return;
+      }
 
-   showMessage(
-    "Registration started. Enter the OTP sent to your mobile.",
-    true
-   );
-  }
- }catch(error){
-  console.error(error);
-  showMessage(error.message || "Something went wrong.");
- }finally{
-  button.disabled = false;
- }
-});
+      if (!/^[0-9]{10}$/.test(mobile)) {
+        message("10 अंकों का मोबाइल नंबर डालें।");
+        return;
+      }
 
-otpForm.addEventListener("submit",async(e)=>{
- e.preventDefault();
+      if (password.length < 6) {
+        message("पासवर्ड कम से कम 6 अक्षर का होना चाहिए।");
+        return;
+      }
 
- const token = document.getElementById("otp").value.trim();
+      message("Account बनाया जा रहा है...");
 
- if(!/^[0-9]{6}$/.test(token)){
-  showMessage("Enter the 6-digit OTP.");
-  return;
- }
+      const { data, error } = await db.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: name,
+            mobile: mobile
+          }
+        }
+      });
 
- try{
-  const {error} = await db.auth.verifyOtp({
-   phone:pendingPhone,
-   token,
-   type:"sms"
-  });
+      if (error) {
+        message(error.message);
+        return;
+      }
 
-  if(error) throw error;
+      if (data.session) {
+        message("Registration सफल! Redirect हो रहे हैं...");
+        window.location.href = "index.html";
+      } else {
+        message("Registration सफल! अपने ईमेल में verification link देखें।");
+      }
+    }
 
-  showMessage("Account verified successfully! Welcome to WORKFINISH.",true);
+    async function login() {
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
 
-  setTimeout(()=>{
-   window.location.href="./index.html";
-  },1200);
+      if (!email || !password) {
+        message("ईमेल और पासवर्ड भरें।");
+        return;
+      }
 
- }catch(error){
-  console.error(error);
-  showMessage(error.message || "OTP verification failed.");
- }
-});
-</script>
+      message("Login हो रहा है...");
+
+      const { error } = await db.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error) {
+        message(error.message);
+        return;
+      }
+
+      window.location.href = "index.html";
+    }
+  </script>
 </body>
 </html>
