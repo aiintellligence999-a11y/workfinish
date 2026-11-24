@@ -1,0 +1,133 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WORKFINISH | Submit Your Work</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f4f6fb;color:#172033}
+header{background:#111b35;color:white;padding:22px 7%;display:flex;justify-content:space-between;align-items:center}
+.logo{font-size:25px;font-weight:800;letter-spacing:1px}
+.logo span{color:#64d8b0}
+.hero{text-align:center;padding:42px 15px 25px}
+.hero h1{font-size:34px;margin:0 0 10px}
+.hero p{color:#68738a}
+.container{max-width:720px;margin:15px auto 50px;padding:0 15px}
+.card{background:white;padding:25px;border-radius:16px;box-shadow:0 8px 30px #17203312}
+label{display:block;font-weight:600;margin:16px 0 7px}
+input,select,textarea{width:100%;padding:13px;border:1px solid #dce1eb;border-radius:9px;font-size:15px;background:white}
+textarea{min-height:95px;resize:vertical}
+button{width:100%;padding:15px;border:0;border-radius:9px;background:#176b55;color:white;font-size:16px;font-weight:bold;margin-top:22px;cursor:pointer}
+button:hover{background:#10513f}
+.price{background:#edfaf5;padding:17px;border-radius:10px;margin-top:18px}
+.price h2{margin:0;color:#176b55}
+.note{font-size:13px;color:#68738a;line-height:1.6}
+footer{text-align:center;padding:25px;color:#788197}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">WORK<span>FINISH</span></div>
+  <div>Work made simple.</div>
+</header>
+
+<section class="hero">
+  <h1>Submit Your Work</h1>
+  <p>Send your files. Get your work done.</p>
+</section>
+
+<div class="container">
+<div class="card">
+<h2>New Work Request</h2>
+<p class="note">Fill in your details and submit your request. Final price and delivery time will be confirmed by our admin.</p>
+
+<form id="workForm">
+
+<label>Your Full Name</label>
+<input id="name" required placeholder="Enter your name">
+
+<label>Mobile Number</label>
+<input id="mobile" type="tel" required pattern="[0-9]{10}" maxlength="10" placeholder="10-digit mobile number">
+
+<label>Work Category</label>
+<select id="category" required>
+<option value="10">Normal Work - ₹10/page</option>
+<option value="15">Register Pages - ₹15/page</option>
+<option value="20">Office / Big Files - ₹20/page</option>
+</select>
+
+<label>Number of Pages (per copy)</label>
+<input id="pages" type="number" min="1" required placeholder="Example: 50">
+
+<label>Number of Copies</label>
+<select id="copies">
+<option value="1">1 Copy</option>
+<option value="2">2 Copies</option>
+<option value="3">3 Copies</option>
+</select>
+
+<label>Delivery Speed</label>
+<select id="speed">
+<option value="0">Normal - Next Day (Free)</option>
+<option value="50">Fast - Within 5 Hours (+₹50)</option>
+<option value="100">Express - Within 3 Hours (+₹100)</option>
+</select>
+
+<label>Describe Your Work</label>
+<textarea id="description" required placeholder="Tell us what work you need..."></textarea>
+
+<label>Upload Files (PDF / Images)</label>
+<input id="files" type="file" multiple accept=".pdf,.jpg,.jpeg,.png">
+
+<div class="price">
+<p>Estimated Price</p>
+<h2 id="estimate">₹0</h2>
+<p class="note">Final quotation and deadline depend on admin approval.</p>
+</div>
+
+<button type="submit">Submit Work Request</button>
+</form>
+
+<p id="message" class="note"></p>
+</div>
+</div>
+
+<footer>© 2026 WORKFINISH. All rights reserved.</footer>
+
+<script>
+const category = document.getElementById("category");
+const pages = document.getElementById("pages");
+const copies = document.getElementById("copies");
+const speed = document.getElementById("speed");
+const estimate = document.getElementById("estimate");
+
+function calculatePrice(){
+  const p = Number(pages.value) || 0;
+  const c = Number(copies.value);
+  const rate = Number(category.value);
+  const extra = Number(speed.value);
+
+  let total = p * c * rate;
+  if(c === 3 && total > 0) total = Math.max(500,total);
+
+  total += extra;
+  estimate.textContent = "₹" + (p > 0 ? total : 0);
+}
+
+[category,pages,copies,speed].forEach(el=>{
+  el.addEventListener("input",calculatePrice);
+  el.addEventListener("change",calculatePrice);
+});
+
+document.getElementById("workForm").addEventListener("submit",function(e){
+  e.preventDefault();
+  document.getElementById("message").textContent =
+    "Demo form complete! Backend connection is needed before requests can reach the admin.";
+});
+</script>
+
+</body>
+</html>
