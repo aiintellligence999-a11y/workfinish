@@ -2,208 +2,111 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WORKFINISH | Student Registration</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <style>
-    *{box-sizing:border-box}
-    body{
-      margin:0;
-      min-height:100vh;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding:20px;
-      font-family:Arial,sans-serif;
-      background:linear-gradient(135deg,#081326,#142d50);
-      color:white;
-    }
-    .card{
-      width:100%;
-      max-width:420px;
-      padding:32px;
-      border:1px solid #334b6b;
-      border-radius:20px;
-      background:#17263c;
-      box-shadow:0 15px 45px #0006;
-    }
-    .logo{
-      text-align:center;
-      font-size:29px;
-      font-weight:800;
-      color:#60a5fa;
-      letter-spacing:1px;
-    }
-    .subtitle{
-      text-align:center;
-      color:#aebed2;
-      margin:10px 0 25px;
-    }
-    label{
-      display:block;
-      margin:14px 0 7px;
-      font-size:14px;
-      color:#dce7f5;
-    }
-    input{
-      width:100%;
-      padding:14px;
-      border:1px solid #405571;
-      border-radius:10px;
-      background:#0d192b;
-      color:white;
-      font-size:15px;
-      outline:none;
-    }
-    input:focus{border-color:#60a5fa}
-    button{
-      width:100%;
-      padding:14px;
-      margin-top:20px;
-      border:0;
-      border-radius:10px;
-      background:#2563eb;
-      color:white;
-      font-size:16px;
-      font-weight:bold;
-      cursor:pointer;
-    }
-    button.secondary{
-      margin-top:10px;
-      background:#334155;
-    }
-    button:disabled{opacity:.6;cursor:not-allowed}
-    #msg{
-      text-align:center;
-      margin-top:18px;
-      font-size:14px;
-      line-height:1.5;
-      overflow-wrap:anywhere;
-    }
-    .footer{
-      text-align:center;
-      color:#8295ae;
-      font-size:12px;
-      margin-top:22px;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WORKFINISH | Student Portal</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;display:grid;place-items:center;padding:20px;background:#0b1424;color:white;font-family:Arial}
+.card{width:100%;max-width:420px;background:#17263c;padding:30px;border-radius:18px;border:1px solid #344760}
+h1{text-align:center;color:#60a5fa;margin:0}
+.sub{text-align:center;color:#aabbd0;margin-bottom:25px}
+input{width:100%;padding:14px;margin:8px 0;border:1px solid #405571;border-radius:9px;background:#0d192b;color:white;font-size:15px}
+button{width:100%;padding:14px;margin-top:12px;border:0;border-radius:9px;background:#2563eb;color:white;font-weight:bold;font-size:15px;cursor:pointer}
+.secondary{background:#334155}
+#msg{text-align:center;font-size:14px;overflow-wrap:anywhere;margin-top:15px}
+</style>
 </head>
 <body>
-
 <div class="card">
-  <div class="logo">WORKFINISH</div>
-  <p class="subtitle">Create your student account</p>
+<h1>WORKFINISH</h1>
+<p class="sub">Student Registration & Login</p>
 
-  <label for="name">Full Name</label>
-  <input id="name" type="text" placeholder="Enter your full name">
+<input id="name" placeholder="Full Name">
+<input id="mobile" type="tel" maxlength="10" placeholder="Mobile Number">
+<input id="email" type="email" placeholder="Email Address">
+<input id="password" type="password" placeholder="Password (minimum 6 characters)">
 
-  <label for="mobile">Mobile Number</label>
-  <input id="mobile" type="tel" maxlength="10" placeholder="Enter 10-digit mobile number">
-
-  <label for="email">Email Address</label>
-  <input id="email" type="email" placeholder="Enter your email">
-
-  <label for="password">Password</label>
-  <input id="password" type="password" placeholder="Create a password">
-
-  <button id="registerBtn" onclick="register()">Create Account</button>
-  <button class="secondary" onclick="login()">Login to Account</button>
-
-  <p id="msg"></p>
-  <div class="footer">© 2026 WORKFINISH. All rights reserved.</div>
+<button id="registerBtn" onclick="register()">Create Account</button>
+<button class="secondary" onclick="login()">Login</button>
+<p id="msg"></p>
 </div>
 
 <script>
-  const SUPABASE_URL = "https://bsbrggofoikseyztqcgy.supabase.co";
-  const SUPABASE_KEY = "sb_publishable_RsqurUsRe4m9aJpOa-m5aQ_TpyycQs_";
+const SUPABASE_URL = "https://bsbrggofoikseyztqcgy.supabase.co/rest/v1/";
+const SUPABASE_KEY = "sb_publishable_RsqurUsRe4m9aJpOa-m5aQ_TpyycQs_";
 
-  const db = window.supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_KEY
-  );
+const db = window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
-  function message(text, color="#93c5fd"){
-    const msg = document.getElementById("msg");
-    msg.textContent = text;
-    msg.style.color = color;
+function show(text,color="#93c5fd"){
+ document.getElementById("msg").textContent=text;
+ document.getElementById("msg").style.color=color;
+}
+
+async function register(){
+ const name=document.getElementById("name").value.trim();
+ const mobile=document.getElementById("mobile").value.trim();
+ const email=document.getElementById("email").value.trim();
+ const password=document.getElementById("password").value;
+ const btn=document.getElementById("registerBtn");
+
+ if(!name||!mobile||!email||!password){
+  show("Please fill all fields.","#fca5a5");return;
+ }
+ if(!/^[0-9]{10}$/.test(mobile)){
+  show("Enter a valid 10-digit mobile number.","#fca5a5");return;
+ }
+ if(password.length<6){
+  show("Password must be at least 6 characters.","#fca5a5");return;
+ }
+
+ btn.disabled=true;
+ show("Creating your account...");
+
+ try{
+  const {data,error}=await db.auth.signUp({
+   email,
+   password,
+   options:{
+    data:{full_name:name,mobile:mobile}
+   }
+  });
+
+  if(error) throw error;
+
+  if(data.session){
+   show("Account created successfully!");
+   setTimeout(()=>location.href="index.html",1000);
+  }else{
+   show("Account created. Please check Supabase email confirmation settings.");
   }
+ }catch(error){
+  show(error.message,"#fca5a5");
+ }finally{
+  btn.disabled=false;
+ }
+}
 
-  async function register(){
-    const name = document.getElementById("name").value.trim();
-    const mobile = document.getElementById("mobile").value.trim();
-    const email = document.getElementById("email").value.trim();
-    const password = document.getElementById("password").value;
-    const btn = document.getElementById("registerBtn");
+async function login(){
+ const email=document.getElementById("email").value.trim();
+ const password=document.getElementById("password").value;
 
-    if(!name || !mobile || !email || !password){
-      message("Please fill in all fields.","#fca5a5");
-      return;
-    }
+ if(!email||!password){
+  show("Enter your email and password.","#fca5a5");return;
+ }
 
-    if(!/^[0-9]{10}$/.test(mobile)){
-      message("Please enter a valid 10-digit mobile number.","#fca5a5");
-      return;
-    }
+ show("Logging in...");
 
-    if(password.length < 6){
-      message("Password must be at least 6 characters.","#fca5a5");
-      return;
-    }
+ const {error}=await db.auth.signInWithPassword({email,password});
 
-    btn.disabled = true;
-    message("Creating your account...");
+ if(error){
+  show(error.message,"#fca5a5");return;
+ }
 
-    const {data,error} = await db.auth.signUp({
-      email: email,
-      password: password,
-      options:{
-        data:{
-          full_name:name,
-          mobile:mobile
-        }
-      }
-    });
-
-    btn.disabled = false;
-
-    if(error){
-      message(error.message,"#fca5a5");
-      return;
-    }
-
-    if(data.session){
-      message("Account created successfully! Redirecting...");
-      window.location.href = "index.html";
-    }else{
-      message("Registration successful! Please check your email and verify your account.");
-    }
-  }
-
-  async function login(){
-    const email = document.getElementById("email").value.trim();
-    const password = document.getElementById("password").value;
-
-    if(!email || !password){
-      message("Please enter your email and password.","#fca5a5");
-      return;
-    }
-
-    message("Logging in...");
-
-    const {error} = await db.auth.signInWithPassword({
-      email,
-      password
-    });
-
-    if(error){
-      message(error.message,"#fca5a5");
-      return;
-    }
-
-    window.location.href = "index.html";
-  }
+ show("Login successful!");
+ setTimeout(()=>location.href="index.html",800);
+}
 </script>
-
 </body>
 </html>
