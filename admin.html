@@ -1,0 +1,259 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WORKFINISH | Admin Panel</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f2f5fa;color:#172033;font-family:Arial,sans-serif}
+header{background:#111b35;color:white;padding:20px 6%;display:flex;justify-content:space-between;align-items:center}
+.logo{font-size:23px;font-weight:bold}
+.logo span{color:#64d8b0}
+main{max-width:950px;margin:35px auto;padding:0 15px}
+.card{background:white;padding:22px;border-radius:14px;margin-bottom:18px;box-shadow:0 5px 22px #17203310}
+input,select{padding:12px;border:1px solid #dce1eb;border-radius:8px;width:100%;margin:8px 0;font-size:15px}
+button{border:0;background:#176b55;color:white;padding:12px 17px;border-radius:8px;font-weight:bold;cursor:pointer}
+button:disabled{opacity:.5}
+.secondary{background:#34415e}
+.logout{background:#a83232}
+.order{border:1px solid #e2e7ef;border-radius:12px;padding:18px;margin:15px 0}
+.order h3{margin-top:0}
+.small{font-size:13px;color:#68738a;overflow-wrap:anywhere}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.hidden{display:none}
+#message{padding:12px;color:#a83232}
+@media(max-width:550px){.row{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">WORK<span>FINISH</span> ADMIN</div>
+  <button class="logout hidden" id="logoutBtn">Logout</button>
+</header>
+
+<main>
+<section class="card" id="loginBox">
+  <h2>Admin Login</h2>
+  <p class="small">Only authorized administrator can access this panel.</p>
+  <form id="loginForm">
+    <label>Email</label>
+    <input id="email" type="email" required placeholder="Admin email">
+    <label>Password</label>
+    <input id="password" type="password" required placeholder="Admin password">
+    <button id="loginBtn" type="submit">Login</button>
+  </form>
+  <p id="message"></p>
+</section>
+
+<section id="dashboard" class="hidden">
+  <div class="card">
+    <h2>Admin Dashboard</h2>
+    <p>Manage customer work requests.</p>
+    <button class="secondary" id="refreshBtn">Refresh Orders</button>
+    <h3 id="orderCount">Orders: 0</h3>
+  </div>
+  <div class="card">
+    <h2>Customer Orders</h2>
+    <div id="orders"></div>
+  </div>
+</section>
+</main>
+
+<script>
+// Add your Supabase project details here.
+const SUPABASE_URL = "PASTE_YOUR_PROJECT_URL_HERE";
+const SUPABASE_PUBLISHABLE_KEY = "PASTE_YOUR_PUBLISHABLE_KEY_HERE";
+
+const db = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_PUBLISHABLE_KEY
+);
+
+const $ = id => document.getElementById(id);
+
+function showMessage(text){
+  $("message").textContent = text;
+}
+
+async function verifyAdmin(){
+  const {data,error} = await db.rpc("is_admin");
+  if(error || data !== true){
+    await db.auth.signOut();
+    showMessage("Admin permission not found. Access denied.");
+    return false;
+  }
+  return true;
+}
+
+async function openDashboard(){
+  const allowed = await verifyAdmin();
+  if(!allowed) return;
+
+  $("loginBox").classList.add("hidden");
+  $("dashboard").classList.remove("hidden");
+  $("logoutBtn").classList.remove("hidden");
+  await loadOrders();
+}
+
+async function loadOrders(){
+  const container = $("orders");
+  container.textContent = "Loading orders...";
+
+  const {data,error} = await db
+    .from("orders")
+    .select("id,customer_name,mobile,category,pages,copies,delivery_speed,description,estimated_price,status,created_at")
+    .order("created_at",{ascending:false});
+
+  if(error){
+    container.textContent = "Could not load orders. Please refresh.";
+    console.error(error);
+    return;
+  }
+
+  $("orderCount").textContent = "Orders: " + data.length;
+  container.replaceChildren();
+
+  if(data.length === 0){
+    container.textContent = "No customer orders yet.";
+    return;
+  }
+
+  data.forEach(order=>{
+    const card = document.createElement("div");
+    card.className = "order";
+
+    const heading = document.createElement("h3");
+    heading.textContent = order.customer_name;
+
+    const details = document.createElement("p");
+    details.className = "small";
+    details.textContent =
+      "Mobile: " + order.mobile +
+      " | Category: " + order.category +
+      " | Pages: " + order.pages +
+      " | Copies: " + order.copies +
+      " | Delivery: " + order.delivery_speed;
+
+    const description = document.createElement("p");
+    description.textContent = "Work: " + order.description;
+
+    const id = document.createElement("p");
+    id.className = "small";
+    id.textContent = "Order ID: " + order.id;
+
+    const date = document.createElement("p");
+    date.className = "small";
+    date.textContent = "Submitted: " +
+      new Date(order.created_at).toLocaleString();
+
+    const priceLabel = document.createElement("label");
+    priceLabel.textContent = "Final quotation (₹)";
+
+    const price = document.createElement("input");
+    price.type = "number";
+    price.min = "0";
+    price.value = order.estimated_price;
+
+    const statusLabel = document.createElement("label");
+    statusLabel.textContent = "Order status";
+
+    const status = document.createElement("select");
+    ["Pending","Approved","Rejected","In Progress","Completed","Delivered"]
+      .forEach(value=>{
+        const option = document.createElement("option");
+        option.value = value;
+        option.textContent = value;
+        status.appendChild(option);
+      });
+    status.value = order.status || "Pending";
+
+    const save = document.createElement("button");
+    save.textContent = "Save Changes";
+
+    save.addEventListener("click",async()=>{
+      const amount = Number(price.value);
+
+      if(!Number.isInteger(amount) || amount < 0){
+        alert("Enter a valid quotation.");
+        return;
+      }
+
+      save.disabled = true;
+      save.textContent = "Saving...";
+
+      const {error} = await db
+        .from("orders")
+        .update({
+          estimated_price: amount,
+          status: status.value
+        })
+        .eq("id",order.id);
+
+      if(error){
+        alert("Update failed. Please try again.");
+        console.error(error);
+      }else{
+        alert("Order updated successfully.");
+      }
+
+      save.disabled = false;
+      save.textContent = "Save Changes";
+      await loadOrders();
+    });
+
+    card.append(
+      heading,id,details,description,date,
+      priceLabel,price,statusLabel,status,save
+    );
+
+    container.appendChild(card);
+  });
+}
+
+$("loginForm").addEventListener("submit",async event=>{
+  event.preventDefault();
+
+  $("loginBtn").disabled = true;
+  showMessage("Checking login...");
+
+  const {error} = await db.auth.signInWithPassword({
+    email: $("email").value.trim(),
+    password: $("password").value
+  });
+
+  $("loginBtn").disabled = false;
+
+  if(error){
+    showMessage("Login failed. Check your email and password.");
+    return;
+  }
+
+  await openDashboard();
+});
+
+$("refreshBtn").addEventListener("click",loadOrders);
+
+$("logoutBtn").addEventListener("click",async()=>{
+  await db.auth.signOut();
+  location.reload();
+});
+
+async function start(){
+  if(SUPABASE_URL.includes("PASTE_") ||
+     SUPABASE_PUBLISHABLE_KEY.includes("PASTE_")){
+    showMessage("Add your Supabase project URL and publishable key.");
+    return;
+  }
+
+  const {data} = await db.auth.getSession();
+  if(data.session) await openDashboard();
+}
+
+start();
+</script>
+</body>
+</html>
