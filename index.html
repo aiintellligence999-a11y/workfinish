@@ -5,6 +5,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WORKFINISH | Submit Your Work</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <style>
 *{box-sizing:border-box}
 body{margin:0;font-family:Arial,sans-serif;background:#f4f6fb;color:#172033}
@@ -20,15 +23,16 @@ label{display:block;font-weight:600;margin:16px 0 7px}
 input,select,textarea{width:100%;padding:13px;border:1px solid #dce1eb;border-radius:9px;font-size:15px;background:white}
 textarea{min-height:95px;resize:vertical}
 button{width:100%;padding:15px;border:0;border-radius:9px;background:#176b55;color:white;font-size:16px;font-weight:bold;margin-top:22px;cursor:pointer}
-button:hover{background:#10513f}
+button:disabled{opacity:.6;cursor:not-allowed}
 .price{background:#edfaf5;padding:17px;border-radius:10px;margin-top:18px}
 .price h2{margin:0;color:#176b55}
 .note{font-size:13px;color:#68738a;line-height:1.6}
+#message{padding:12px;border-radius:8px;margin-top:15px}
 footer{text-align:center;padding:25px;color:#788197}
 </style>
 </head>
-<body>
 
+<body>
 <header>
   <div class="logo">WORK<span>FINISH</span></div>
   <div>Work made simple.</div>
@@ -42,25 +46,25 @@ footer{text-align:center;padding:25px;color:#788197}
 <div class="container">
 <div class="card">
 <h2>New Work Request</h2>
-<p class="note">Fill in your details and submit your request. Final price and delivery time will be confirmed by our admin.</p>
+<p class="note">Submit your details. Our admin will review your request and confirm the final price and deadline.</p>
 
 <form id="workForm">
 
 <label>Your Full Name</label>
-<input id="name" required placeholder="Enter your name">
+<input id="name" required maxlength="100" placeholder="Enter your name">
 
 <label>Mobile Number</label>
 <input id="mobile" type="tel" required pattern="[0-9]{10}" maxlength="10" placeholder="10-digit mobile number">
 
 <label>Work Category</label>
-<select id="category" required>
-<option value="10">Normal Work - ₹10/page</option>
-<option value="15">Register Pages - ₹15/page</option>
-<option value="20">Office / Big Files - ₹20/page</option>
+<select id="category">
+<option value="Normal Work">Normal Work - ₹10/page</option>
+<option value="Register Pages">Register Pages - ₹15/page</option>
+<option value="Office / Big Files">Office / Big Files - ₹20/page</option>
 </select>
 
 <label>Number of Pages (per copy)</label>
-<input id="pages" type="number" min="1" required placeholder="Example: 50">
+<input id="pages" type="number" min="1" max="10000" required placeholder="Example: 50">
 
 <label>Number of Copies</label>
 <select id="copies">
@@ -71,63 +75,147 @@ footer{text-align:center;padding:25px;color:#788197}
 
 <label>Delivery Speed</label>
 <select id="speed">
-<option value="0">Normal - Next Day (Free)</option>
-<option value="50">Fast - Within 5 Hours (+₹50)</option>
-<option value="100">Express - Within 3 Hours (+₹100)</option>
+<option value="Normal">Normal - Next Day (Free)</option>
+<option value="Fast">Fast - Within 5 Hours (+₹50)</option>
+<option value="Express">Express - Within 3 Hours (+₹100)</option>
 </select>
 
 <label>Describe Your Work</label>
-<textarea id="description" required placeholder="Tell us what work you need..."></textarea>
-
-<label>Upload Files (PDF / Images)</label>
-<input id="files" type="file" multiple accept=".pdf,.jpg,.jpeg,.png">
+<textarea id="description" required maxlength="2000" placeholder="Tell us what work you need..."></textarea>
 
 <div class="price">
 <p>Estimated Price</p>
 <h2 id="estimate">₹0</h2>
-<p class="note">Final quotation and deadline depend on admin approval.</p>
+<p class="note">3-copy orders have a minimum charge of ₹500. Final quotation is subject to admin approval.</p>
 </div>
 
-<button type="submit">Submit Work Request</button>
+<button id="submitBtn" type="submit">Submit Work Request</button>
 </form>
 
-<p id="message" class="note"></p>
+<div id="message" role="status" aria-live="polite"></div>
 </div>
 </div>
 
 <footer>© 2026 WORKFINISH. All rights reserved.</footer>
 
 <script>
-const category = document.getElementById("category");
-const pages = document.getElementById("pages");
-const copies = document.getElementById("copies");
-const speed = document.getElementById("speed");
-const estimate = document.getElementById("estimate");
+// STEP 1: Replace these two values with your own Supabase details.
+const SUPABASE_URL = "https://bsbrggofoikseyztqcgy.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_RsqurUsRe4m9aJpOa-m5aQ_TpyycQs_";
+
+// STEP 2: Connect to Supabase.
+const db = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_PUBLISHABLE_KEY
+);
+
+const $ = id => document.getElementById(id);
 
 function calculatePrice(){
-  const p = Number(pages.value) || 0;
-  const c = Number(copies.value);
-  const rate = Number(category.value);
-  const extra = Number(speed.value);
+  const pages = Number($("pages").value) || 0;
+  const copies = Number($("copies").value);
+  const category = $("category").value;
 
-  let total = p * c * rate;
-  if(c === 3 && total > 0) total = Math.max(500,total);
+  const rates = {
+    "Normal Work": 10,
+    "Register Pages": 15,
+    "Office / Big Files": 20
+  };
 
-  total += extra;
-  estimate.textContent = "₹" + (p > 0 ? total : 0);
+  const urgency = {
+    "Normal": 0,
+    "Fast": 50,
+    "Express": 100
+  };
+
+  let total = pages * copies * rates[category];
+
+  if(copies === 3 && pages > 0){
+    total = Math.max(500,total);
+  }
+
+  total += urgency[$("speed").value];
+
+  $("estimate").textContent = "₹" + (pages > 0 ? total : 0);
+  return total;
 }
 
-[category,pages,copies,speed].forEach(el=>{
-  el.addEventListener("input",calculatePrice);
-  el.addEventListener("change",calculatePrice);
+["pages","copies","category","speed"].forEach(id=>{
+  $(id).addEventListener("input",calculatePrice);
+  $(id).addEventListener("change",calculatePrice);
 });
 
-document.getElementById("workForm").addEventListener("submit",function(e){
+$("workForm").addEventListener("submit", async function(e){
   e.preventDefault();
-  document.getElementById("message").textContent =
-    "Demo form complete! Backend connection is needed before requests can reach the admin.";
-});
-</script>
 
+  const btn = $("submitBtn");
+  const message = $("message");
+
+  const name = $("name").value.trim();
+  const mobile = $("mobile").value.trim();
+  const pages = Number($("pages").value);
+  const copies = Number($("copies").value);
+  const description = $("description").value.trim();
+  const price = calculatePrice();
+
+  if(!/^[0-9]{10}$/.test(mobile)){
+    message.textContent = "Please enter a valid 10-digit mobile number.";
+    return;
+  }
+
+  if(!name || !description || pages < 1 || pages > 10000){
+    message.textContent = "Please check all required fields.";
+    return;
+  }
+
+  if(SUPABASE_URL.includes("PASTE_") ||
+     SUPABASE_PUBLISHABLE_KEY.includes("PASTE_")){
+    message.textContent = "Please add your Supabase Project URL and Publishable Key in the code.";
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = "Submitting...";
+  message.textContent = "";
+
+  const order = {
+    customer_name: name,
+    mobile: mobile,
+    category: $("category").value,
+    pages: pages,
+    copies: copies,
+    delivery_speed: $("speed").value,
+    description: description,
+    estimated_price: price
+  };
+
+  try{
+    const {data,error} = await db
+      .from("orders")
+      .insert([order])
+      .select("id")
+      .single();
+
+    if(error) throw error;
+
+    message.textContent =
+      "Request submitted successfully! Your request ID is " + data.id +
+      ". Admin will review your order.";
+
+    $("workForm").reset();
+    calculatePrice();
+
+  }catch(error){
+    console.error(error);
+    message.textContent =
+      "Could not submit your request. Please try again later.";
+  }finally{
+    btn.disabled = false;
+    btn.textContent = "Submit Work Request";
+  }
+});
+
+calculatePrice();
+</script>
 </body>
 </html>
