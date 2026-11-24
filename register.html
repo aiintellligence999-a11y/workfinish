@@ -1,122 +1,209 @@
 
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WORKFINISH - Student Registration</title>
+  <title>WORKFINISH | Student Registration</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     *{box-sizing:border-box}
-    body{margin:0;font-family:Arial;background:#101827;color:white;display:grid;place-items:center;min-height:100vh;padding:20px}
-    .card{width:100%;max-width:400px;background:#1d293b;padding:28px;border-radius:18px}
-    h1{text-align:center;color:#60a5fa}
-    p{text-align:center;color:#bdc8d8}
-    input,button{width:100%;padding:14px;margin:9px 0;border-radius:9px;border:0;font-size:15px}
-    input{background:#f1f5f9;color:#111}
-    button{background:#2563eb;color:white;font-weight:bold;cursor:pointer}
-    button.secondary{background:#475569}
-    #msg{font-size:14px;overflow-wrap:anywhere}
+    body{
+      margin:0;
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+      font-family:Arial,sans-serif;
+      background:linear-gradient(135deg,#081326,#142d50);
+      color:white;
+    }
+    .card{
+      width:100%;
+      max-width:420px;
+      padding:32px;
+      border:1px solid #334b6b;
+      border-radius:20px;
+      background:#17263c;
+      box-shadow:0 15px 45px #0006;
+    }
+    .logo{
+      text-align:center;
+      font-size:29px;
+      font-weight:800;
+      color:#60a5fa;
+      letter-spacing:1px;
+    }
+    .subtitle{
+      text-align:center;
+      color:#aebed2;
+      margin:10px 0 25px;
+    }
+    label{
+      display:block;
+      margin:14px 0 7px;
+      font-size:14px;
+      color:#dce7f5;
+    }
+    input{
+      width:100%;
+      padding:14px;
+      border:1px solid #405571;
+      border-radius:10px;
+      background:#0d192b;
+      color:white;
+      font-size:15px;
+      outline:none;
+    }
+    input:focus{border-color:#60a5fa}
+    button{
+      width:100%;
+      padding:14px;
+      margin-top:20px;
+      border:0;
+      border-radius:10px;
+      background:#2563eb;
+      color:white;
+      font-size:16px;
+      font-weight:bold;
+      cursor:pointer;
+    }
+    button.secondary{
+      margin-top:10px;
+      background:#334155;
+    }
+    button:disabled{opacity:.6;cursor:not-allowed}
+    #msg{
+      text-align:center;
+      margin-top:18px;
+      font-size:14px;
+      line-height:1.5;
+      overflow-wrap:anywhere;
+    }
+    .footer{
+      text-align:center;
+      color:#8295ae;
+      font-size:12px;
+      margin-top:22px;
+    }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h1>WORKFINISH</h1>
-    <p>Student Account</p>
 
-    <input id="name" placeholder="पूरा नाम">
-    <input id="mobile" placeholder="मोबाइल नंबर" type="tel">
-    <input id="email" placeholder="ईमेल">
-    <input id="password" placeholder="पासवर्ड" type="password">
+<div class="card">
+  <div class="logo">WORKFINISH</div>
+  <p class="subtitle">Create your student account</p>
 
-    <button onclick="register()">Register</button>
-    <button class="secondary" onclick="login()">Login</button>
-    <p id="msg"></p>
-  </div>
+  <label for="name">Full Name</label>
+  <input id="name" type="text" placeholder="Enter your full name">
 
-  <script>
-    const SUPABASE_URL = "https://bsbrggofoikseyztqcgy.supabase.co";
-    const SUPABASE_KEY = "sb_publishable_RsqurUsRe4m9aJpOa-m5aQ_TpyycQs_";
+  <label for="mobile">Mobile Number</label>
+  <input id="mobile" type="tel" maxlength="10" placeholder="Enter 10-digit mobile number">
 
-    const db = window.supabase.createClient(
-      SUPABASE_URL,
-      SUPABASE_KEY
-    );
+  <label for="email">Email Address</label>
+  <input id="email" type="email" placeholder="Enter your email">
 
-    function message(text) {
-      document.getElementById("msg").textContent = text;
+  <label for="password">Password</label>
+  <input id="password" type="password" placeholder="Create a password">
+
+  <button id="registerBtn" onclick="register()">Create Account</button>
+  <button class="secondary" onclick="login()">Login to Account</button>
+
+  <p id="msg"></p>
+  <div class="footer">© 2026 WORKFINISH. All rights reserved.</div>
+</div>
+
+<script>
+  const SUPABASE_URL = "https://bsbrggofoikseyztqcgy.supabase.co/rest/v1/";
+  const SUPABASE_KEY = "sb_publishable_RsqurUsRe4m9aJpOa-m5aQ_TpyycQs_";
+
+  const db = window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+  );
+
+  function message(text, color="#93c5fd"){
+    const msg = document.getElementById("msg");
+    msg.textContent = text;
+    msg.style.color = color;
+  }
+
+  async function register(){
+    const name = document.getElementById("name").value.trim();
+    const mobile = document.getElementById("mobile").value.trim();
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value;
+    const btn = document.getElementById("registerBtn");
+
+    if(!name || !mobile || !email || !password){
+      message("Please fill in all fields.","#fca5a5");
+      return;
     }
 
-    async function register() {
-      const name = document.getElementById("name").value.trim();
-      const mobile = document.getElementById("mobile").value.trim();
-      const email = document.getElementById("email").value.trim();
-      const password = document.getElementById("password").value;
+    if(!/^[0-9]{10}$/.test(mobile)){
+      message("Please enter a valid 10-digit mobile number.","#fca5a5");
+      return;
+    }
 
-      if (!name || !mobile || !email || !password) {
-        message("सभी जानकारी भरें।");
-        return;
-      }
+    if(password.length < 6){
+      message("Password must be at least 6 characters.","#fca5a5");
+      return;
+    }
 
-      if (!/^[0-9]{10}$/.test(mobile)) {
-        message("10 अंकों का मोबाइल नंबर डालें।");
-        return;
-      }
+    btn.disabled = true;
+    message("Creating your account...");
 
-      if (password.length < 6) {
-        message("पासवर्ड कम से कम 6 अक्षर का होना चाहिए।");
-        return;
-      }
-
-      message("Account बनाया जा रहा है...");
-
-      const { data, error } = await db.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: name,
-            mobile: mobile
-          }
+    const {data,error} = await db.auth.signUp({
+      email: email,
+      password: password,
+      options:{
+        data:{
+          full_name:name,
+          mobile:mobile
         }
-      });
-
-      if (error) {
-        message(error.message);
-        return;
       }
+    });
 
-      if (data.session) {
-        message("Registration सफल! Redirect हो रहे हैं...");
-        window.location.href = "index.html";
-      } else {
-        message("Registration सफल! अपने ईमेल में verification link देखें।");
-      }
+    btn.disabled = false;
+
+    if(error){
+      message(error.message,"#fca5a5");
+      return;
     }
 
-    async function login() {
-      const email = document.getElementById("email").value.trim();
-      const password = document.getElementById("password").value;
-
-      if (!email || !password) {
-        message("ईमेल और पासवर्ड भरें।");
-        return;
-      }
-
-      message("Login हो रहा है...");
-
-      const { error } = await db.auth.signInWithPassword({
-        email,
-        password
-      });
-
-      if (error) {
-        message(error.message);
-        return;
-      }
-
+    if(data.session){
+      message("Account created successfully! Redirecting...");
       window.location.href = "index.html";
+    }else{
+      message("Registration successful! Please check your email and verify your account.");
     }
-  </script>
+  }
+
+  async function login(){
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value;
+
+    if(!email || !password){
+      message("Please enter your email and password.","#fca5a5");
+      return;
+    }
+
+    message("Logging in...");
+
+    const {error} = await db.auth.signInWithPassword({
+      email,
+      password
+    });
+
+    if(error){
+      message(error.message,"#fca5a5");
+      return;
+    }
+
+    window.location.href = "index.html";
+  }
+</script>
+
 </body>
 </html>
